@@ -1,4 +1,3 @@
-## CS765: Project Part - 1
 # Simulation of a P2P Cryptocurrency Network
 
 Team Members: Mugdha Bilotia, Sarthak Chaurasia, Svanik Gade
