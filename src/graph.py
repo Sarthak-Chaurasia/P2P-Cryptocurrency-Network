@@ -25,7 +25,8 @@ def make_connected_graph(n, seed, node_speeds, node_cpus):
 
     while True:  # keep trying until success
         nodes: Dict[int, Node] = {i: Node(i, node_cpus[i], node_speeds[i]) for i in range(n)}
-
+        for node in nodes.values():
+            node.blockchain_init()
         # Track current degrees
         degrees = {i: 0 for i in range(n)}
         edges: Set[frozenset[int]] = set()

@@ -2,22 +2,22 @@ from modules import *
 from transactions import *
 
 class Block:
-    def __init__(self, p_id, miner):
+    def __init__(self, p_id, miner_id):
         self.p_id = p_id      # this is universally same for each block
-        self.transactions = [Transaction("coinbase", miner, reward)] # Every new transaction must have a coinbase transaction (SHOULD WE HAVE -1 in place of COINBASE @mugdha @svanik)
-        self.miner = miner
+        self.miner_id = miner_id
+        self.transactions = [Transaction("coinbase", miner_id, reward)] # Every new transaction must have a coinbase transaction (SHOULD WE HAVE -1 in place of COINBASE @mugdha @svanik)
         self.creation_time = time.time()
         self.id = self.compute_hash()
 
     def compute_hash(self):
         blk = {
-            "parent": self.p_id,
-            "miner": self.miner,
+            "parent": str(self.p_id),
+            "miner": str(self.miner_id),
             "transactions": [txn.trxn_id for txn in self.transactions]
         }
         data = json.dumps(blk, sort_keys=True)
         return sha256(data)
-
+    
 genesis_block = Block(-1, -1)
 
 class Blockchain: # A unique copy of main blockchain held by each node (peer)
@@ -106,7 +106,7 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
                 current_size += txn.size
 
         p_id = self.longest_chain_head
-        candidate_block = Block(p_id, miner)
+        candidate_block = Block(p_id, miner.id)
         candidate_block.transactions.extend(selected_txns)
         I = 600
         Tk = np.random.exponential(I / miner.hash_power)
@@ -147,7 +147,7 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
             sender = txn.sender
             receiver = txn.receiver
             amount = txn.amount
-            
+
             if sender != "coinbase":
                 if temp_balances[sender] < amount:
                     return False # discarding the block not adding to orphan pool

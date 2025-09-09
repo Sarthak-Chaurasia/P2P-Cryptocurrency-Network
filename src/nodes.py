@@ -18,24 +18,28 @@ class Node:
         all_nodes[id] = self
         self.neighbors = []
         self.coins = initial_coins
-        self.blockchain = Blockchain()
+        self.blockchain = None
         self.cpu_type = cpu_type
         self.network_speed = network_speed
         self.hash_power = 1 if cpu_type == CPUType.LOW else 10
         # self.mempool = []
-        
+
+    def blockchain_init(self): # This is needed to be added separately because first all nodes need to be init for all_nodes setup then blockchain for each is setup using that
+        self.blockchain = Blockchain()
+
         # add network delay function according to the formula
         # all_nodes[neighbor_id].network_delay
     def add_neighbor(self, neighbor_id):
         self.neighbors.append(neighbor_id)
     
     def generate_txn(self, dest_id):
-        simulator.event_queue.append(Event(0, EventTypes.GENERATE_TXN, self.id, dest_id))
+        heapq.heappush(simulator.event_queue, Event(0, EventTypes.GENERATE_TXN, self.id, dest_id))
+        # simulator.event_queue.append(Event(0, EventTypes.GENERATE_TXN, self.id, dest_id))
     
     def mine_block(self):
-        simulator.event_queue.append(Event(0, EventTypes.GENERATE_BLOCK, self.id))
+        heapq.heappush(simulator.event_queue, Event(0, EventTypes.GENERATE_BLOCK, self.id))
 
-    def capture_txn(self, txn):
+    def capture_txn(self, txn): 
         self.blockchain.capture_txn(txn)
 
     def capture_block(self, block):

@@ -30,19 +30,21 @@ class Simulator:
         self.event_queue = []
     
     def handle_event(self, event):
-        if event.type == EventTypes.GENERATE_TXN:
-            txn = event.node.blockchain.generate_txn(event.node, event.data)
-            self.event_queue.append(Event(event.time, EventTypes.PROPAGATE_TXN, event.node.id, txn))
-        elif event.type == EventTypes.GENERATE_BLOCK:
-            block, tk = event.node.blockchain.mine_block(event.node)
-            self.event_queue.append(Event(event.time, EventTypes.PROPAGATE_BLOCK, event.node.id, block))
-        elif event.type == EventTypes.PROPAGATE_TXN:
-            for neighbor_id in event.node.neighbors:
-                # delay = event.node.network_delay(all_nodes[neighbor_id], event.data.size)
+        if event.event_type == EventTypes.GENERATE_TXN:
+            txn = all_nodes[event.node_id].blockchain.generate_txn(all_nodes[event.node_id], event.data)
+            # self.event_queue.append(Event(event.time, EventTypes.PROPAGATE_TXN, all_nodes[event.node_id].id, txn))
+            heapq.heappush(self.event_queue, Event(event.time, EventTypes.PROPAGATE_TXN, event.node_id, txn))
+        elif event.event_type == EventTypes.GENERATE_BLOCK:
+            block, tk = all_nodes[event.node_id].blockchain.mine_block(all_nodes[event.node_id])
+            # self.event_queue.append(Event(event.time, EventTypes.PROPAGATE_BLOCK, all_nodes[event.node_id].id, block))
+            heapq.heappush(self.event_queue, Event(event.time + tk, EventTypes.PROPAGATE_BLOCK, event.node_id, block))
+        elif event.event_type == EventTypes.PROPAGATE_TXN:
+            for neighbor_id in all_nodes[event.node_id].neighbors:
+                # delay = all_nodes[event.node_id].network_delay(all_nodes[neighbor_id], event.data.size)
                 all_nodes[neighbor_id].capture_txn(event.data)
-        elif event.type == EventTypes.PROPAGATE_BLOCK:
-            for neighbor_id in event.node.neighbors:
-                # delay = event.node.network_delay(all_nodes[neighbor_id], event.data.size)
+        elif event.event_type == EventTypes.PROPAGATE_BLOCK:
+            for neighbor_id in all_nodes[event.node_id].neighbors:
+                # delay = all_nodes[event.node_id].network_delay(all_nodes[neighbor_id], event.data.size)
                 all_nodes[neighbor_id].capture_block(event.data)
 
     # def send_txn(self, event):

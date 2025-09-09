@@ -5,16 +5,16 @@ class Transaction:
         self.sender = sender
         self.receiver = receiver
         self.amount = amount
-        self.time = time.time()
-        self.size = 8192 # 1KB in bits 
-        self.trxn_id = self.compute_hash(sender, receiver, amount, time)
+        self.txn_time = time.time()
+        self.size = 8192 # 1KB in bits
+        self.trxn_id = self.compute_hash(self.sender, self.receiver, self.amount, self.txn_time)
 
-    def compute_hash(self, sender, receiver, amount, time):
+    def compute_hash(self, sender, receiver, amount, txn_time):
         txn = {
-            "sender": sender,
-            "receiver": receiver,
-            "amount": amount,
-            "time": time
+            "sender": str(sender),
+            "receiver": str(receiver),
+            "amount": int(amount),
+            "time": float(txn_time)
         }
         data = json.dumps(txn, sort_keys=True)
         return sha256(data)
