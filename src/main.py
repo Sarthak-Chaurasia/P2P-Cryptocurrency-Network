@@ -33,6 +33,8 @@ simulator.initialize_event_queue()
 for node in all_nodes.values():
     print(f"Node {node.id} neighbors: {node.neighbors}")
 
+print(genesis_block.id)
+
 while simulator.event_queue:
     event = heapq.heappop(simulator.event_queue)
     simulator.handle_event(event)
