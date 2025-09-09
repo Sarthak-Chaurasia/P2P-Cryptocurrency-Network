@@ -1,13 +1,15 @@
-import enum
+from modules import *
 
-# the four types of events that can occur in the simulation
+# All events that are scheduled need to be defined here
 class EventTypes(enum.Enum):
-    GENERATE_TXN = "generate a new transaction"
-    GENERATE_BLOCK = "generate a new block"
-    TRANSMIT_TXN = "send transmit_txn to event handler to generate capture_txn for neighbors"
-    CAPTURE_TXN = "send capture_txn to nodes to generate transmit_txn for broadcasting"
-    TRANSMIT_BLOCK = "send transmit_block to event handler to generate capture_block for neighbors"
-    CAPTURE_BLOCK = "send capture_block to nodes to generate transmit_block for broadcasting"
+    GENERATE_TXN = "generate a new transaction on node and add propagate to event queue"
+    GENERATE_BLOCK = "generate a new block on node and add propagate to event queue"
+    PROPAGATE_TXN = "propagate txn to neighbors of node"
+    PROPAGATE_BLOCK = "propagate block to neighbors of node"
+    # TRANSMIT_TXN = "send transmit_txn to event handler to generate capture_txn for neighbors"
+    # CAPTURE_TXN = "send capture_txn to nodes to generate transmit_txn for broadcasting"
+    # TRANSMIT_BLOCK = "send transmit_block to event handler to generate capture_block for neighbors"
+    # CAPTURE_BLOCK = "send capture_block to nodes to generate transmit_block for broadcasting"
 
 # Event class; event queue will be a global priority queue, not node specific
 class Event:
