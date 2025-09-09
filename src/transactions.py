@@ -1,14 +1,13 @@
 from modules import *
-from main import sha256
 
 class Transaction:
     def __init__(self, sender, receiver, amount):
-        self.trxn_id = self.compute_hash(sender, receiver, amount, time)
         self.sender = sender
         self.receiver = receiver
         self.amount = amount
         self.time = time.time()
         self.size = 8192 # 1KB in bits 
+        self.trxn_id = self.compute_hash(sender, receiver, amount, time)
 
     def compute_hash(self, sender, receiver, amount, time):
         txn = {

@@ -1,5 +1,5 @@
 from modules import *
-from nodes import Node
+from nodes import *
 
 
 def is_connected(nodes: Dict[int, Node]) -> bool:

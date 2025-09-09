@@ -1,15 +1,13 @@
 from modules import *
-from nodes import all_nodes
-from main import reward, sha256
-from transactions import Transaction
+from transactions import *
 
 class Block:
     def __init__(self, p_id, miner):
-        self.id = self.compute_hash()
-        self.p_id = p_id        # this is universally same for each block
+        self.p_id = p_id      # this is universally same for each block
         self.transactions = [Transaction("coinbase", miner, reward)] # Every new transaction must have a coinbase transaction (SHOULD WE HAVE -1 in place of COINBASE @mugdha @svanik)
         self.miner = miner
         self.creation_time = time.time()
+        self.id = self.compute_hash()
 
     def compute_hash(self):
         blk = {

@@ -1,12 +1,8 @@
 from modules import *
-from enum import Enum
-from blockchain import Blockchain
-from events import Event, EventTypes
-from main import simulator
+from blockchain import *
+from events import *
 
 initial_coins = 100 ## change as needed
-
-all_nodes = {}
 
 class NetworkSpeed(Enum):
     FAST = "fast"
