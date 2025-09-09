@@ -3,6 +3,8 @@ import heapq
 import hashlib
 import json
 import time
+import signal
+import sys
 from enum import Enum
 import random
 from typing import Dict, Set
@@ -19,7 +21,7 @@ timeout = None # timeout for simulation, None for our purposes, we end simulatio
 visualize: bool # enable visualization
 
 ## Constants
-
+initial_coins = 100 ## change as needed
 
 # Network speeds in Mbps
 c_fast: int = 100

@@ -2,7 +2,7 @@ from modules import *
 from blockchain import *
 from events import *
 
-initial_coins = 100 ## change as needed
+
 
 class NetworkSpeed(Enum):
     FAST = "fast"
@@ -27,23 +27,22 @@ class Node:
     def blockchain_init(self): # This is needed to be added separately because first all nodes need to be init for all_nodes setup then blockchain for each is setup using that
         self.blockchain = Blockchain()
 
-        # add network delay function according to the formula
-        # all_nodes[neighbor_id].network_delay
     def add_neighbor(self, neighbor_id):
         self.neighbors.append(neighbor_id)
     
     def generate_txn(self, dest_id):
         heapq.heappush(simulator.event_queue, Event(0, EventTypes.GENERATE_TXN, self.id, dest_id))
-        # simulator.event_queue.append(Event(0, EventTypes.GENERATE_TXN, self.id, dest_id))
     
     def mine_block(self):
         heapq.heappush(simulator.event_queue, Event(0, EventTypes.GENERATE_BLOCK, self.id))
 
     def capture_txn(self, txn): 
-        self.blockchain.capture_txn(txn)
+        if self.blockchain.capture_txn(txn):
+            heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_TXN, self.id, txn))
 
     def capture_block(self, block):
-        self.blockchain.capture_block(block)
+        if self.blockchain.capture_block(block):
+            heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, self.id, block))
 
     def network_delay(self, other_node, message_size):
         rho = np.random.uniform(10, 500) / 1000.0   # seconds

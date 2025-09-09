@@ -18,6 +18,9 @@ class Block:
         data = json.dumps(blk, sort_keys=True)
         return sha256(data)
     
+    def __str__(self):
+        return f"Block {self.id[:3]} mined by Node {self.miner_id} containing {len(self.transactions)} transactions"
+    
 genesis_block = Block(-1, -1)
 
 class Blockchain: # A unique copy of main blockchain held by each node (peer)
@@ -36,7 +39,18 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
         self.longest_chain_head = self.longest_chain[-1]
         self.longest_chain_length = 1
 
+    def __str__(self):
+        def dfs(block_id, prefix="", is_last=True):
+            out = prefix + ("└─ " if is_last else "├─ ") + f"{block_id[:3]}\n"
+            children = self.blocks[block_id]["children"]
+            for i, child in enumerate(children):
+                last = (i == len(children) - 1)
+                new_prefix = prefix + ("   " if is_last else "│  ")
+                out += dfs(child, new_prefix, last)
+            return out
 
+        return dfs(self.genesis.id, "", True)
+    
     def add_block(self, block):
         self.blocks[block.id] = {
             "block": block,
@@ -86,13 +100,17 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
         self.longest_chain_length = len(self.longest_chain)
 
     def generate_txn(self, sender, dest_id):  
-        amount = np.random.randint(1, sender.coins) # (@mugdha @svanik) should we make it more a distribution which picks more smaller values (exp distribution)
+        val = int(np.random.exponential(scale=sender.coins/10)) + 1
+        amount = min(val, sender.coins)  # (@mugdha @svanik) should we make it more a distribution which picks more smaller values (exp distribution)
         txn = Transaction(sender.id, dest_id, amount)
         self.mempool.add(txn)
         return txn
 
     def capture_txn(self, txn): # add txn to mempool if not duplicate
-        self.mempool.add(txn)
+        if txn not in self.mempool:
+            self.mempool.add(txn)
+            return True
+        return False
 
     def mine_block(self, miner): # takes txns from mempool (assuming mempool is synced with longest chain) and generates a block (with transactions) and return Tk (time to mine??)
         self.sync_longest_chain()  # ensure longest chain is up to date before mining
@@ -102,6 +120,8 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
         current_size = 8192 # coinbase txn size in bits
         for txn in txns:
             if current_size + txn.size <= 8192000: # @mugdha @svanik isn't 1000 transactions too big should we reduce it
+                if self.blocks[self.longest_chain_head]["node_balances"][txn.sender] < txn.amount:
+                    continue
                 selected_txns.append(txn)
                 current_size += txn.size
 
@@ -115,25 +135,37 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
     def capture_block(self, block): # this should update the longest chain(if fork on tip) and mempool too (also update orphan pool and blocks(adj list))
         # no need to sync here
         if not self.is_block_valid(block):
-            return
+            return False
         if block.id in self.blocks:
-            return  # Duplicate block, do nothing
+            return False  # Duplicate block, do nothing
         else:
-            self.add_block(block)
+            self.add_block(block) # ALL BLOCKS ARE ADDED IN blocks DICTIONARY, ORPHANS OR NOT
 
         if block.p_id in self.blocks:
             self.blocks[block.p_id]["children"].append(block.id)
             self.orphan_block_pool.discard(block.id)
+        
+            def update_orphan(block_id):
+                orphans_parents = {self.blocks[blk_id]["block"].p_id : blk_id for blk_id in self.orphan_block_pool}
+                if block_id in orphans_parents:
+                    if self.add_orphan_to_blockchain(self.blocks[orphans_parents[block_id]]["block"]):
+                        return True, orphans_parents[block_id]
+                return False, None
+
+            added = True
+            block_id = block.id
+            while added:
+                added, block_id = update_orphan(block_id)
+
+            if block.p_id == self.longest_chain_head:
+                self.longest_chain.append(block.id)
+                self.longest_chain_head = block.id
+                self.longest_chain_length += 1
+                for txn in block.transactions:
+                    self.mempool.discard(txn)
         else:
             self.orphan_block_pool.add(block.id)
-            return
-
-        if block.p_id == self.longest_chain_head:
-            self.longest_chain.append(block.id)
-            self.longest_chain_head = block.id
-            self.longest_chain_length += 1
-            for txn in block.transactions:
-                self.mempool.discard(txn)
+        return True
 
     def is_block_valid(self,block): # returns if block is valid also updates orphan block pool, blocks(adj list)
         # check if parent exists
@@ -163,4 +195,9 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
         
         return True
 
-
+    def add_orphan_to_blockchain(self, orphan_block):
+        if orphan_block.p_id in self.blocks:
+            self.add_block(orphan_block)
+            self.blocks[orphan_block.p_id]["children"].append(orphan_block.id)
+            self.orphan_block_pool.discard(orphan_block.id)
+            return True
