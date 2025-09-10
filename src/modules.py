@@ -13,6 +13,15 @@ from matplotlib.pylab import block
 import networkx as nx
 import matplotlib.pyplot as plt
 
+class NetworkSpeed(Enum):
+    FAST = "fast"
+    SLOW = "slow"
+    
+class CPUType(Enum):
+    HIGH = "high"
+    LOW = "low"
+    
+    
 all_nodes = {}
 
 n: int  # number of nodes

@@ -2,6 +2,12 @@
 from modules import *
 from graph import *
 
+
+z0 = 0.3
+z1 = 0.3
+
+n = 10
+
 nodes = range(n)  # list of all node ids
 slow_nodes = np.random.choice(nodes, int(z0*n), replace=False) # list of slow node ids
 low_cpu_nodes = np.random.choice(nodes, int(z1*n), replace=False) # list of low cpu power node ids
@@ -25,30 +31,21 @@ current_time = 0.0
 simulator.initialize_event_queue()
 
 # for node in all_nodes.values():
-    # print(f"Node {node.id} neighbors: {node.neighbors}")
+#     print(f"Node {node.id} neighbors: {node.neighbors}")
 
 # print(genesis_block.id)
 
-# last_time = 0
-
 while simulator.event_queue:
     event = heapq.heappop(simulator.event_queue)
-    simulator.current_time = event.time
     simulator.handle_event(event)
-    # if last_time > event.time:
-    #     print("Time went backwards!")
-    # last_time = event.time
+    time = event.time
     # print(event)
 
 for node in all_nodes.values():
     node.blockchain.sync_longest_chain()
     # print(f"Node {node.id}: Longest chain length = {node.blockchain.longest_chain_length}, Head = {node.blockchain.longest_chain_head[:3]}")
     # print(node.blockchain)
-
-# json_allnode_block_arrival()
+    
 node = all_nodes[5]
 print(node.blockchain.get_ratio_of_blocks())
-# all_nodes[0].blockchain.draw_blockchain_tree()
-
-# print(len(all_nodes[0].blockchain.blocks))
-# print(len(all_nodes[0].blockchain.orphan_block_pool.keys()))
+# print(node.blockchain.get_ratio_of_blocks())
