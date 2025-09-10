@@ -31,16 +31,16 @@ class Node:
         self.neighbors.append(neighbor_id)
     
     def generate_txn(self, dest_id):
-        heapq.heappush(simulator.event_queue, Event(exp_random_val(T_tx), EventTypes.GENERATE_TXN, self.id, dest_id))
+        heapq.heappush(simulator.event_queue, Event(simulator.current_time + exp_random_val(T_tx), EventTypes.GENERATE_TXN, self.id, dest_id))
     
     def mine_block(self):
-        heapq.heappush(simulator.event_queue, Event(exp_random_val(T_interarrival/self.hash_power), EventTypes.GENERATE_BLOCK, self.id))
+        heapq.heappush(simulator.event_queue, Event(simulator.current_time + exp_random_val(T_interarrival/self.hash_power), EventTypes.GENERATE_BLOCK, self.id))
 
     def capture_txn(self, txn): 
         if self.blockchain.capture_txn(txn):
             for neighbor_id in self.neighbors:
                 delay = self.network_delay(all_nodes[neighbor_id], tx_size)
-                heapq.heappush(simulator.event_queue, Event(delay, EventTypes.PROPAGATE_TXN, neighbor_id, {"dest": neighbor_id, "trxn": txn}))
+                heapq.heappush(simulator.event_queue, Event(simulator.current_time + delay, EventTypes.PROPAGATE_TXN, neighbor_id, {"dest": neighbor_id, "trxn": txn}))
             # heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_TXN, self.id, txn))
         # else:
         #     print(f"Rejected txn: {txn.trxn_id[:3]} on node {self.id}")
@@ -53,7 +53,7 @@ class Node:
         else:
             for neighbor_id in self.neighbors:
                 delay = self.network_delay(all_nodes[neighbor_id], block.size)
-                heapq.heappush(simulator.event_queue, Event(delay, EventTypes.PROPAGATE_BLOCK, neighbor_id, {"dest": neighbor_id, "block": block}))
+                heapq.heappush(simulator.event_queue, Event(simulator.current_time + delay, EventTypes.PROPAGATE_BLOCK, neighbor_id, {"dest": neighbor_id, "block": block}))
             # heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, self.id, block))
             # if capture==1:
             #     print(f"Node {self.id} added block {block.id[:3]} to orphan")

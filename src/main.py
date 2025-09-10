@@ -29,10 +29,15 @@ for node in all_nodes.values():
 
 print(genesis_block.id)
 
+# last_time = 0
+
 while simulator.event_queue:
     event = heapq.heappop(simulator.event_queue)
+    simulator.current_time = event.time
     simulator.handle_event(event)
-    time = event.time
+    # if last_time > event.time:
+    #     print("Time went backwards!")
+    # last_time = event.time
     # print(event)
 
 for node in all_nodes.values():
