@@ -45,3 +45,7 @@ for node in all_nodes.values():
     node.blockchain.sync_longest_chain()
     print(f"Node {node.id}: Longest chain length = {node.blockchain.longest_chain_length}, Head = {node.blockchain.longest_chain_head[:3]}")
     # print(node.blockchain)
+
+# is this enough or sabh node keliye run karna padhega?
+node = random.choice(list(all_nodes.values()))
+print(node.blockchain.get_ratio_of_blocks())

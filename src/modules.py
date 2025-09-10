@@ -10,6 +10,14 @@ import random
 from typing import Dict, Set
 from collections import deque
 
+class NetworkSpeed(Enum):
+    FAST = "fast"
+    SLOW = "slow"
+    
+class CPUType(Enum):
+    HIGH = "high"
+    LOW = "low"
+    
 all_nodes = {}
 
 n: int  # number of nodes

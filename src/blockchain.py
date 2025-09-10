@@ -267,3 +267,69 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
             self.add_block(orphan_block)
             return True
         return False
+    
+    def get_ratio_of_blocks(self):
+        # Blocks in longest chain per node
+        block_count_in_longest_chain = {node: 0 for node in all_nodes}
+        for blk_id in self.longest_chain:
+            block = self.blocks[blk_id]["block"]
+            block_count_in_longest_chain[block.miner_id] += 1
+
+        # Total blocks in the whole tree per node
+        total_block_count = {node: 0 for node in all_nodes}
+
+        def dfs(block_id):
+            block = self.blocks[block_id]["block"]
+            total_block_count[block.miner_id] += 1
+            for child_id in self.blocks[block_id]["children"]:
+                dfs(child_id)
+
+        dfs(self.genesis_id)
+
+        # Ratio (longest_chain / total mined) per node
+        ratio = {}
+        for node in all_nodes:
+            if total_block_count[node] > 0:
+                ratio[node] = block_count_in_longest_chain[node] / total_block_count[node]
+            else:
+                ratio[node] = 0.0
+
+        slow_ratios, fast_ratios = [], []
+        high_cpu_ratios, low_cpu_ratios = [], []
+
+        # Contribution accumulators
+        slow_contrib, fast_contrib = 0, 0
+        high_cpu_contrib, low_cpu_contrib = 0, 0
+        longest_chain_len = len(self.longest_chain)
+
+        for node, r in ratio.items():
+            # Group by network speed
+            if node.network_speed == NetworkSpeed.Fast:
+                fast_ratios.append(r)
+                fast_contrib += block_count_in_longest_chain[node]
+            else:
+                slow_ratios.append(r)
+                slow_contrib += block_count_in_longest_chain[node]
+
+            # Group by CPU type
+            if node.cpu_type == CPUType.HIGH:
+                high_cpu_ratios.append(r)
+                high_cpu_contrib += block_count_in_longest_chain[node]
+            elif node.cpu_type == CPUType.LOW:
+                low_cpu_ratios.append(r)
+                low_cpu_contrib += block_count_in_longest_chain[node]
+
+        # Average ratios per group
+        r1_slow = sum(slow_ratios) / len(slow_ratios) if slow_ratios else 0.0
+        r1_fast = sum(fast_ratios) / len(fast_ratios) if fast_ratios else 0.0
+        r1_high_cpu = sum(high_cpu_ratios) / len(high_cpu_ratios) if high_cpu_ratios else 0.0
+        r1_low_cpu = sum(low_cpu_ratios) / len(low_cpu_ratios) if low_cpu_ratios else 0.0
+
+        # Contribution per group 
+        r2_slow = slow_contrib / longest_chain_len if longest_chain_len > 0 else 0.0
+        r2_fast = fast_contrib / longest_chain_len if longest_chain_len > 0 else 0.0
+        r2_high_cpu = high_cpu_contrib / longest_chain_len if longest_chain_len > 0 else 0.0
+        r2_low_cpu = low_cpu_contrib / longest_chain_len if longest_chain_len > 0 else 0.0
+
+        results = [r1_high_cpu, r1_low_cpu, r1_fast, r1_slow, r2_high_cpu, r2_low_cpu, r2_fast, r2_slow]
+        return results

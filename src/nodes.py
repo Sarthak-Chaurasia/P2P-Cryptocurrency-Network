@@ -1,16 +1,6 @@
 from modules import *
 from blockchain import *
 from events import *
-
-
-
-class NetworkSpeed(Enum):
-    FAST = "fast"
-    SLOW = "slow"
-    
-class CPUType(Enum):
-    HIGH = "high"
-    LOW = "low"
     
 class Node:
     def __init__(self, id, cpu_type, network_speed):
