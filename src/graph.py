@@ -69,4 +69,11 @@ def make_connected_graph(n, seed, node_speeds, node_cpus):
         
         if is_connected(nodes):
             return nodes
+        
+def json_allnode_block_arrival():
+    data = {}
+    for node_id, node in all_nodes.items():
+        data[node_id] = node.blockchain.to_json_nodeblocks_arrival()
+    with open('json/block_arrival_times.json', 'w') as f:
+        json.dump(data, f, indent=4)
 

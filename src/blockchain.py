@@ -42,7 +42,7 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
                 "arrival_time": time.time()
             }
         }
-        self.orphan_block_pool = set() # list of block ids whose parent are yet to arrive
+        self.orphan_block_pool = {} # list of block ids whose parent are yet to arrive
         self.mempool = set() # list of transactions waiting to be included in a block
         self.longest_chain = [self.genesis.id]
         self.longest_chain_head = self.longest_chain[-1]
@@ -79,12 +79,12 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
             self.blocks[block.id] = {
                 "block": block,
                 "children": [],
-                "node_balances": {node: temp_balances.get(node, 0) for node in all_nodes},
+                "node_balances": temp_balances,
                 "arrival_time": time.time()
             }
 
             self.blocks[block.p_id]["children"].append(block.id)
-            self.orphan_block_pool.discard(block)
+            self.orphan_block_pool.pop(block.id,None)
 
             if block.p_id == self.longest_chain_head:
                 self.longest_chain.append(block.id)
@@ -149,9 +149,10 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
         self.longest_chain_length = len(self.longest_chain)
 
     def generate_txn(self, sender, dest_id):  
-        val = int(np.random.exponential(scale=sender.coins/10)) + 1
-        amount = min(val, sender.coins)
+        val = int(np.random.exponential(sender.coins/20)) + 1
+        amount = min(val, sender.coins/10)
         txn = Transaction(sender.id, dest_id, amount)
+        # print(f"Node {sender.id} generated txn sending {amount} coins to Node {dest_id} with coins {sender.coins}")
         self.mempool.add(txn)
         return txn
 
@@ -180,7 +181,7 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
         mined_block = Block(p_id, miner.id)
         mined_block.transactions.extend(selected_txns)
 
-        if self.is_block_valid(mined_block):
+        if self.is_block_valid(mined_block) == 1:
             self.add_block(mined_block)
             
         # I = 600
@@ -190,27 +191,29 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
 
     def capture_block(self, block): # this should update the longest chain(if fork on tip) and mempool too (also update orphan pool and blocks(adj list))
         # no need to sync here
-        if block.id in self.blocks or block in self.orphan_block_pool:
-            return False # duplicate block, do nothing
+        if block.id in self.blocks or block.id in self.orphan_block_pool:
+            return 0 # duplicate block, do nothing
         
         validity = self.is_block_valid(block)
-        if validity == 0:
-            self.orphan_block_pool.add(block)
-            return 1 # captured but as orphan
-        elif validity == False:
-            return False # invalid block, DROP
+        # if(block.p_id == genesis_block.id):
+            # print("Genesis parent block amd validity ", validity)
+        if validity == -1:
+            self.orphan_block_pool[block.id] = block
+            return -1 # captured but as orphan
+        elif validity == 0:
+            return 0 # invalid block, DROP
         #else valid block, proceed
 
         self.add_block(block)
     
         def update_orphan(block_id):
             orphan_parents = {}
-            for blk in self.orphan_block_pool:
+            for blk in self.orphan_block_pool.values():
                 orphan_parents.setdefault(blk.p_id, []).append(blk)
             if block_id in orphan_parents:
                 added_orphan_blocks = []
                 for orphan_block in orphan_parents[block_id]:
-                    if self.is_block_valid(orphan_block):
+                    if self.is_block_valid(orphan_block) == 1:
                         self.add_block(orphan_block)
                         added_orphan_blocks.append(orphan_block.id)
                 return added_orphan_blocks
@@ -220,25 +223,16 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
         added_blocks = deque([block.id])
 
         while added_blocks:
+            # print("Processing ",len(added_blocks)," orphan blocks")
             blk_id = added_blocks.popleft()
             new_orphans = update_orphan(blk_id)
             added_blocks.extend(new_orphans)
 
-        # added = True
-        # added_blocks = [block.id]
-        # while added:
-        #     new_added = []
-        #     for blk_id in added_blocks:
-        #         added, yoyo = update_orphan(blk_id)
-        #         if added:
-        #             new_added.extend(yoyo)
-        #     added_blocks = new_added
-
-        return True
+        return 1
 
     def is_block_valid(self,block): # returns False if invalid or orphan
-        if block.p_id not in self.blocks:
-            return 0 # orphan block
+        if block.p_id not in self.blocks.keys():
+            return -1 # orphan block
         
         temp_balances = self.blocks[block.p_id]["node_balances"].copy()
         for txn in block.transactions:
@@ -248,16 +242,42 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
 
             if sender != "coinbase":
                 if temp_balances[sender] < amount:
-                    return False
+                    # print(f"Invalid block {block.id[:3]}: sender {sender} has balance {temp_balances[sender]} but trying to send {amount}")
+                    return 0
                 else:
                     temp_balances[sender] -= amount
                     temp_balances[receiver] += amount
             else:
                 temp_balances[receiver] += amount
-        return True
+        return 1
 
-    def add_orphan_to_blockchain(self, orphan_block): #nothing special can do directly
-        if self.is_block_valid(orphan_block):
-            self.add_block(orphan_block)
-            return True
-        return False
+    def to_json_nodeblocks_arrival(self):
+        data = {}
+        for bid, info in self.blocks.items():
+            data[bid] = info["arrival_time"]
+        return data
+    
+    def draw_blockchain_tree(self):
+        G = nx.DiGraph()
+        # Add edges (parent -> child)
+        for blk_id, data in self.blocks.items():
+            for child in data["children"]:
+                G.add_edge(blk_id, child)
+
+        # Position nodes using hierarchy
+        pos = nx.nx_agraph.graphviz_layout(G, prog="dot")
+
+        # Draw all nodes
+        nx.draw(G, pos, with_labels=False, node_size=300, node_color="lightblue", arrows=True)
+
+        # Highlight the longest chain
+        longest_edges = [(self.longest_chain[i], self.longest_chain[i+1]) 
+                        for i in range(len(self.longest_chain)-1)]
+        nx.draw_networkx_edges(G, pos, edgelist=longest_edges, edge_color="red", width=2)
+
+        # Label nodes with block short-ids
+        labels = {blk_id: blk_id[:3] for blk_id in G.nodes}
+        nx.draw_networkx_labels(G, pos, labels, font_size=8)
+
+        plt.title("Blockchain Tree (Longest Chain Highlighted)")
+        plt.savefig("images/blockchain_tree.png")

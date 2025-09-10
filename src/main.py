@@ -24,10 +24,10 @@ current_time = 0.0
 # simulator.timeout = 100  # set simulation timeout to 100 seconds
 simulator.initialize_event_queue()
 
-for node in all_nodes.values():
-    print(f"Node {node.id} neighbors: {node.neighbors}")
+# for node in all_nodes.values():
+    # print(f"Node {node.id} neighbors: {node.neighbors}")
 
-print(genesis_block.id)
+# print(genesis_block.id)
 
 # last_time = 0
 
@@ -44,3 +44,10 @@ for node in all_nodes.values():
     node.blockchain.sync_longest_chain()
     print(f"Node {node.id}: Longest chain length = {node.blockchain.longest_chain_length}, Head = {node.blockchain.longest_chain_head[:3]}")
     # print(node.blockchain)
+
+# json_allnode_block_arrival()
+
+# all_nodes[0].blockchain.draw_blockchain_tree()
+
+# print(len(all_nodes[0].blockchain.blocks))
+# print(len(all_nodes[0].blockchain.orphan_block_pool.keys()))

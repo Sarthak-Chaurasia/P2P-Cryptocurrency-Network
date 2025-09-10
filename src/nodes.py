@@ -35,6 +35,7 @@ class Node:
     
     def mine_block(self):
         heapq.heappush(simulator.event_queue, Event(simulator.current_time + exp_random_val(T_interarrival/self.hash_power), EventTypes.GENERATE_BLOCK, self.id))
+        self.coins = self.blockchain.blocks[self.blockchain.longest_chain_head]["node_balances"].get(self.id, 0)
 
     def capture_txn(self, txn): 
         if self.blockchain.capture_txn(txn):
@@ -47,7 +48,8 @@ class Node:
 
     def capture_block(self, block):
         capture = self.blockchain.capture_block(block)
-        if not capture:
+        self.coins = self.blockchain.blocks[self.blockchain.longest_chain_head]["node_balances"].get(self.id, 0)
+        if capture == 0:
             # print(f"Rejected block: {block.id[:3]} on node {self.id}")
             a = 1
         else:
@@ -55,9 +57,9 @@ class Node:
                 delay = self.network_delay(all_nodes[neighbor_id], block.size)
                 heapq.heappush(simulator.event_queue, Event(simulator.current_time + delay, EventTypes.PROPAGATE_BLOCK, neighbor_id, {"dest": neighbor_id, "block": block}))
             # heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, self.id, block))
-            # if capture==1:
+            # if capture==-1:
             #     print(f"Node {self.id} added block {block.id[:3]} to orphan")
-            # elif capture==True:
+            # elif capture==1:
             #     print(f"Node {self.id} added block {block.id[:3]} to blockchain")
 
     def network_delay(self, other_node, message_size):
