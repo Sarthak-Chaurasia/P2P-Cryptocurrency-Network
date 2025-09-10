@@ -34,11 +34,11 @@ class Simulator:
             self._post_run(None, None)
         if event.event_type == EventTypes.GENERATE_TXN:
             txn = all_nodes[event.node_id].blockchain.generate_txn(all_nodes[event.node_id], event.data)
-            print(txn)
+            # print(txn)
             heapq.heappush(self.event_queue, Event(0, EventTypes.PROPAGATE_TXN, event.node_id, txn))
         elif event.event_type == EventTypes.GENERATE_BLOCK:
-            block, tk = all_nodes[event.node_id].blockchain.mine_block(all_nodes[event.node_id])
-            print(block)
+            block = all_nodes[event.node_id].blockchain.mine_block(all_nodes[event.node_id])
+            # print(block)
             heapq.heappush(self.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, event.node_id, block))
         elif event.event_type == EventTypes.PROPAGATE_TXN:
             for neighbor_id in all_nodes[event.node_id].neighbors:
@@ -48,10 +48,10 @@ class Simulator:
                 all_nodes[neighbor_id].capture_block(event.data)
 
     def initialize_event_queue(self):
-        for i in range(100):
+        for i in range(1000):
             node = all_nodes[np.random.randint(0, len(all_nodes))]
             rand_event = random_val()
-            if rand_event < 0.8:
+            if rand_event < 0.9:
                 node.generate_txn(np.random.choice(range(len(all_nodes))))
             else:
                 node.mine_block()

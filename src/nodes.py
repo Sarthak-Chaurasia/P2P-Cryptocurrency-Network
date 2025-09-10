@@ -43,11 +43,16 @@ class Node:
         #     print(f"Rejected txn: {txn.trxn_id[:3]} on node {self.id}")
 
     def capture_block(self, block):
-        if self.blockchain.capture_block(block):
-            # print(f"Accepted block: {block.id[:3]} on node {self.id}")
-            heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, self.id, block))
-        # else:
+        capture = self.blockchain.capture_block(block)
+        if not capture:
             # print(f"Rejected block: {block.id[:3]} on node {self.id}")
+            a = 1
+        else:
+            heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, self.id, block))
+            # if capture==1:
+            #     print(f"Node {self.id} added block {block.id[:3]} to orphan")
+            # elif capture==True:
+            #     print(f"Node {self.id} added block {block.id[:3]} to blockchain")
 
     def network_delay(self, other_node, message_size):
         rho = np.random.uniform(10, 500) / 1000.0   # seconds
