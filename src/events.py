@@ -35,23 +35,27 @@ class Simulator:
         if event.event_type == EventTypes.GENERATE_TXN:
             txn = all_nodes[event.node_id].blockchain.generate_txn(all_nodes[event.node_id], event.data)
             # print(txn)
-            heapq.heappush(self.event_queue, Event(0, EventTypes.PROPAGATE_TXN, event.node_id, txn))
+            for neighbor_id in all_nodes[event.node_id].neighbors:
+                delay = all_nodes[event.node_id].network_delay(all_nodes[neighbor_id], tx_size)
+                heapq.heappush(self.event_queue, Event(delay, EventTypes.PROPAGATE_TXN, neighbor_id, {"dest": neighbor_id, "trxn": txn}))
+            # heapq.heappush(self.event_queue, Event(0, EventTypes.PROPAGATE_TXN, event.node_id, txn))
         elif event.event_type == EventTypes.GENERATE_BLOCK:
             block = all_nodes[event.node_id].blockchain.mine_block(all_nodes[event.node_id])
             # print(block)
-            heapq.heappush(self.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, event.node_id, block))
+            for neighbor_id in all_nodes[event.node_id].neighbors:
+                delay = all_nodes[event.node_id].network_delay(all_nodes[neighbor_id], block.size)
+                heapq.heappush(self.event_queue, Event(delay, EventTypes.PROPAGATE_BLOCK, neighbor_id, {"dest": neighbor_id, "block": block}))
+            # heapq.heappush(self.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, event.node_id, block))
         elif event.event_type == EventTypes.PROPAGATE_TXN:
-            for neighbor_id in all_nodes[event.node_id].neighbors:
-                all_nodes[neighbor_id].capture_txn(event.data)
+            all_nodes[event.data["dest"]].capture_txn(event.data["trxn"])
         elif event.event_type == EventTypes.PROPAGATE_BLOCK:
-            for neighbor_id in all_nodes[event.node_id].neighbors:
-                all_nodes[neighbor_id].capture_block(event.data)
+            all_nodes[event.data["dest"]].capture_block(event.data["block"])
 
     def initialize_event_queue(self):
-        for i in range(1000):
+        for i in range(total_txn_blks):
             node = all_nodes[np.random.randint(0, len(all_nodes))]
             rand_event = random_val()
-            if rand_event < 0.9:
+            if rand_event < txn_blk_ratio:
                 node.generate_txn(np.random.choice(range(len(all_nodes))))
             else:
                 node.mine_block()

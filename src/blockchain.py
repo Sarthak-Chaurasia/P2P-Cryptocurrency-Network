@@ -24,6 +24,10 @@ class Block:
 
     def __lt__(self, other):
         return self.id < other.id
+    
+    @property
+    def size(self):
+        return len(self.transactions) * tx_size
 
 genesis_block = Block(-1, -1)
 
@@ -34,7 +38,8 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
             self.genesis.id: {
                 "block": self.genesis,
                 "children": [],
-                "node_balances": {node: int(all_nodes[node].coins) for node in all_nodes}
+                "node_balances": {node: int(all_nodes[node].coins) for node in all_nodes},
+                "arrival_time": time.time()
             }
         }
         self.orphan_block_pool = set() # list of block ids whose parent are yet to arrive
@@ -74,7 +79,8 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
             self.blocks[block.id] = {
                 "block": block,
                 "children": [],
-                "node_balances": {node: temp_balances.get(node, 0) for node in all_nodes}
+                "node_balances": {node: temp_balances.get(node, 0) for node in all_nodes},
+                "arrival_time": time.time()
             }
 
             self.blocks[block.p_id]["children"].append(block.id)
@@ -90,18 +96,6 @@ class Blockchain: # A unique copy of main blockchain held by each node (peer)
     
     def sync_longest_chain(self): # run this time to time to update longest chain and mempool also (RUN BEFORE MINING)
         # find the longest chain by DFS or BFS
-        # def dfs(block_id, path):
-        #     path.append(block_id)
-        #     if not self.blocks[block_id]["children"]:
-        #         return [path[:]]
-        #     paths = []
-        #     for child_id in self.blocks[block_id]["children"]:
-        #         paths.extend(dfs(child_id, path))
-        #     path.pop()
-        #     return paths
-        
-        # all_paths = dfs(self.genesis.id, [])
-        # longest_path = max(all_paths, key=len)
         def longest_path_from(self, block_id):
             def dfs(bid):
                 children = self.blocks[bid]["children"]

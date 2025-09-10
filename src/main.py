@@ -2,12 +2,6 @@
 from modules import *
 from graph import *
 
-
-z0 = 0.3
-z1 = 0.3
-
-n = 10
-
 nodes = range(n)  # list of all node ids
 slow_nodes = np.random.choice(nodes, int(z0*n), replace=False) # list of slow node ids
 low_cpu_nodes = np.random.choice(nodes, int(z1*n), replace=False) # list of low cpu power node ids

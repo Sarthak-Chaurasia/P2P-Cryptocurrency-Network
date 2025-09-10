@@ -31,14 +31,17 @@ class Node:
         self.neighbors.append(neighbor_id)
     
     def generate_txn(self, dest_id):
-        heapq.heappush(simulator.event_queue, Event(0, EventTypes.GENERATE_TXN, self.id, dest_id))
+        heapq.heappush(simulator.event_queue, Event(exp_random_val(T_tx), EventTypes.GENERATE_TXN, self.id, dest_id))
     
     def mine_block(self):
-        heapq.heappush(simulator.event_queue, Event(0, EventTypes.GENERATE_BLOCK, self.id))
+        heapq.heappush(simulator.event_queue, Event(exp_random_val(T_interarrival/self.hash_power), EventTypes.GENERATE_BLOCK, self.id))
 
     def capture_txn(self, txn): 
         if self.blockchain.capture_txn(txn):
-            heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_TXN, self.id, txn))
+            for neighbor_id in self.neighbors:
+                delay = self.network_delay(all_nodes[neighbor_id], tx_size)
+                heapq.heappush(simulator.event_queue, Event(delay, EventTypes.PROPAGATE_TXN, neighbor_id, {"dest": neighbor_id, "trxn": txn}))
+            # heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_TXN, self.id, txn))
         # else:
         #     print(f"Rejected txn: {txn.trxn_id[:3]} on node {self.id}")
 
@@ -48,51 +51,26 @@ class Node:
             # print(f"Rejected block: {block.id[:3]} on node {self.id}")
             a = 1
         else:
-            heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, self.id, block))
+            for neighbor_id in self.neighbors:
+                delay = self.network_delay(all_nodes[neighbor_id], block.size)
+                heapq.heappush(simulator.event_queue, Event(delay, EventTypes.PROPAGATE_BLOCK, neighbor_id, {"dest": neighbor_id, "block": block}))
+            # heapq.heappush(simulator.event_queue, Event(0, EventTypes.PROPAGATE_BLOCK, self.id, block))
             # if capture==1:
             #     print(f"Node {self.id} added block {block.id[:3]} to orphan")
             # elif capture==True:
             #     print(f"Node {self.id} added block {block.id[:3]} to blockchain")
 
     def network_delay(self, other_node, message_size):
-        rho = np.random.uniform(10, 500) / 1000.0   # seconds
+        rho = np.random.uniform(rho_min, rho_max)   # seconds
         if self.network_speed == NetworkSpeed.FAST and other_node.network_speed == NetworkSpeed.FAST:
-            c = 100000000
+            c = c_fast
         else:
-            c = 5000000     # 5 Mbps = 5 * 10^6 bits/sec
+            c = c_slow
 
         transmission_delay = message_size / c
-        mean_q_delay = 96000 / c
-        d = np.random.exponential(mean_q_delay)
+        mean_q_delay = 96 * 1024 / c
+        d = exp_random_val(mean_q_delay)
         delay = rho + transmission_delay + d
         
         return delay
 
-    # (IN blockchain.py)
-    # def txns_in_longest_chain(self):
-    #     txns = set()
-    #     for block in self.blockchain.longest_chain:
-    #         for txn in block.transactions:
-    #             txns.add(txn)
-    #     return txns
-    
-    # def is_block_valid(self, block): # DONE in blockchain.py
-    
-    # (IN blockchain.py) @sarthak @svanik check where to update mempool, balances, reward etc
-    # also check if coinbase txn should be added here or in block class
-    # def generate_block(self):
-        
-    #     txns = [txn for txn in self.mempool if txn not in self.txns_in_longest_chain()]
-    #     selected_txns = []
-    #     current_size = 8192 # coinbase txn size in bits
-    #     for txn in txns:
-    #         if current_size + txn.size <= 8192000:
-    #             selected_txns.append(txn)
-    #             current_size += txn.size
-
-    #     p_id = self.blockchain.longest_chain_head
-    #     candidate_block = Block(p_id, self.id)
-    #     candidate_block.transactions.extend(selected_txns)
-    #     I = 600
-    #     Tk = np.random.exponential(I / self.hash_power)
-    #     return candidate_block, Tk
