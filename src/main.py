@@ -1,4 +1,3 @@
-# Global parameters (restructure the naming of variables if needed)
 from modules import *
 from graph import *
 
@@ -17,38 +16,31 @@ total_hash_power = sum(node.hash_power for node in all_nodes.values())
 
 for node in all_nodes.values():
     node.hash_power /= total_hash_power
-# for nid, node in all_nodes.items():
-#     print(f"Node {nid} ({len(node.neighbors)} neighbors), Network speed: {node.network_speed.name}, CPU type: {node.cpu_type.name}")
 
 current_time = 0.0
-# simulator.timeout = 100  # set simulation timeout to 100 seconds
 simulator.initialize_event_queue()
 
+# to show the graph of the peers
 # for node in all_nodes.values():
     # print(f"Node {node.id} neighbors: {node.neighbors}")
-
-# print(genesis_block.id)
-
-# last_time = 0
 
 while simulator.event_queue:
     event = heapq.heappop(simulator.event_queue)
     simulator.current_time = event.time
     simulator.handle_event(event)
-    # if last_time > event.time:
-    #     print("Time went backwards!")
-    # last_time = event.time
-    # print(event)
 
 for node in all_nodes.values():
     node.blockchain.sync_longest_chain()
-    # print(f"Node {node.id}: Longest chain length = {node.blockchain.longest_chain_length}, Head = {node.blockchain.longest_chain_head[:3]}")
-    # print(node.blockchain)
+    # print(node.id,"\n",node.blockchain,"\n") # to show tree 
 
+simulator._post_run(None, None)
+
+# to make json of block arrival times at each node
 # json_allnode_block_arrival()
-node = all_nodes[5]
-print(node.blockchain.get_ratio_of_blocks())
-# all_nodes[0].blockchain.draw_blockchain_tree()
 
-# print(len(all_nodes[0].blockchain.blocks))
-# print(len(all_nodes[0].blockchain.orphan_block_pool.keys()))
+# to visualize the blockchain tree of a particular node
+# node = all_nodes[5]
+# node.blockchain.draw_blockchain_tree()
+
+# to print the orphan pool size of each node to ensure no orphans remain at the end of simulation
+# print(len(node.blockchain.orphan_block_pool.keys()))

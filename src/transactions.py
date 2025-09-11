@@ -20,5 +20,4 @@ class Transaction:
         return sha256(data)
 
     def __str__(self):
-        # return f"{self.trxn_id}: {self.sender} pays {self.receiver} {self.amount} coins"
-        return f"{self.sender} pays {self.receiver} {self.amount} coins"
+        return f"{self.trxn_id[:3]}: {self.sender} pays {self.receiver} {self.amount} coins"
